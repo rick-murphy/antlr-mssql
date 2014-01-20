@@ -18,6 +18,8 @@ field : '*'
 	| ID '.' ID ID
 	| var ID
 	| var 'as' ID 
+	| stmt ID
+	| stmt 'as' ID
 	;
 	
 fieldlist : field (',' field)* ;
@@ -39,22 +41,25 @@ tablejoin : 'left' ('outer')? 'join' table (tablejoin)* 'on' stmt
 var : '\'' ~'\''* '\'' 
 	| ID
 	| ID '.' ID
-	| casestmt
-	| funcstmt
+	| '-' var
 	| '(' var ')'
 	;
 	
 stmt : var 
-	|var op var
+	| casestmt
+	| funcstmt
+	| stmt op stmt
+	| var 'is' ('not')? 'null'
 	| stmt bop stmt
 	| '(' stmt ')'
+	| '-' stmt
 	;
 
 casestmt : 'case' ID? ('when' stmt 'then' stmt)+ ('else' stmt)? 'end' ;
 	
 funcstmt : ID ('.' ID)? '(' funcparams ')' ;
 
-funcparams : ID
-	| ID (',' ID)*
+funcparams : var
+	| var (',' var)*
 	;
 	
