@@ -4,10 +4,12 @@ ID : [\[\]0-9a-zA-Z_]+ ;
 WS : [ \t] -> skip ;
 COMMENT : '-' '-' ~('\r'|'\n')* '\r'? '\n' -> skip;
 
-op : '=' | '>' | '>=' | '<' | '<=' | 'like' | '+' | '-' | '*' | '/' ;
+
+op : '=' | '>' | '>=' | '<' | '<=' | 'like' | '+' | '-' | '*' | '/' | 'in' ;
 bop : 'and' | 'or' ;
 
-select : 'select' fieldlist 'from' tablelist ('where' stmt)?;
+select : 'select' fieldlist 'from' tablelist ('where' stmt)?
+	| '(' select ')';
 
 field : '*'
 	| ID
@@ -38,14 +40,18 @@ tablelist : table (',' table)*
 tablejoin : 'left' ('outer')? 'join' table (tablejoin)* 'on' stmt 
 	| 'inner' 'join' table (tablejoin)* 'on' stmt;
 
-var : '\'' ~'\''* '\'' 
-	| ID
+string : '\'' ~'\''* '\'' ;
+
+var : ID
 	| ID '.' ID
 	| '-' var
 	| '(' var ')'
 	;
 	
 stmt : var 
+	| string
+	| string (',' string)*
+	| select
 	| casestmt
 	| funcstmt
 	| stmt op stmt
@@ -55,7 +61,7 @@ stmt : var
 	| '-' stmt
 	;
 
-casestmt : 'case' ID? ('when' stmt 'then' stmt)+ ('else' stmt)? 'end' ;
+casestmt : 'case' ID? ('when' stmt 'then' (stmt|select))+ ('else' (stmt|select))? 'end' ;
 	
 funcstmt : ID ('.' ID)? '(' funcparams ')' ;
 
