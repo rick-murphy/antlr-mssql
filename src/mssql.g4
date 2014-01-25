@@ -31,6 +31,13 @@ fragment Z:('z'|'Z');
 SELECT : S E L E C T ;
 FROM : F R O M ;
 WHERE : W H E R E ;
+CASE : C A S E ;
+WHEN : W H E N ;
+THEN : T H E N ;
+ELSE : E L S E ;
+END : E N D ;
+GROUP : G R O U P ;
+BY : B Y ;
 AS : A S ;
 INNER : I N N E R ;
 LEFT : L E F T ;
@@ -40,11 +47,14 @@ ON : O N ;
 IN : I N ;
 LIKE : L I K E ;
 IS : I S ;
+NOT : N O T ;
 NULL : N U L L ;
+AND : A N D ;
+OR : O R ;
 /****************************************/
 WS : [ \t\r\n] -> skip ;
+COMMENT : '-' '-' ~('\r'|'\n')* '\r'? '\n' -> skip;
 DOT : '.' ;
-MINUS : '-' ;
 COMMA : ',' ;
 LB : '(' ;
 RB : ')' ;
@@ -55,38 +65,53 @@ ID : [a-zA-Z]
 	| [a-zA-Z][0-9a-zA-Z_]+
 	| LSB ID RSB
 	;
-	
-oph : ('*'|'/') ;
-opl : ('+'|'-') ;
-bop : (LIKE|IN|'>='|'<='|'<>'|'>'|'<'|'=') ;
-string : '\'' ~'\''* '\'' ;
+string : '\'' ('%')? ~'\''* ('%')? '\'' ;
 number : DIGIT 
 	| DIGIT DOT DIGIT
-	| MINUS number
+	| '-' number
 	;
+path : ID (DOT ID)+;
 
 field : expr ((AS)? ID)? ;
 fieldlist : field
 	| field (COMMA field)* 
 	;
 
-table : ID (DOT ID)* ((AS)? ID)?
+table : (path|ID) ((AS)? ID)?
 	| LB select RB (AS)? ID
 	;
 tablejoin : (LEFT (OUTER)? JOIN|INNER JOIN) table (tablejoin)* ON stmt ;
-tablelist : table
+tablelist : table (tablejoin)*
 	| table (COMMA table)*
-	| table (tablejoin)*
+	| table
 	;
-var : ID
-	| number
-	| ID (DOT ID)*
+var : casestmt
+	| funcstmt
 	| LB string (COMMA string)* RB
 	| LB var RB
+	| path
+	| string
+	| number
+	| ID
 	;
-expr : var
+expr :  LB select RB
+	| expr ('*'|'/') expr
+	| expr ('+'|'-') expr
 	| LB expr RB
-	| expr (oph|opl) expr
+	| '-' expr
+	| var
 	;
-stmt : ID ;
-select : SELECT fieldlist FROM tablelist ;
+condition : expr ('>='|'<='|'<>'|'>'|'<'|'=') expr
+	| expr IN LB select RB
+	| expr IN LB string (COMMA string)* RB
+	| expr LIKE string
+	| var IS (NOT)? NULL
+	;
+stmt : stmt AND stmt
+	| stmt OR stmt
+	| LB stmt RB
+	| condition
+	;
+casestmt : CASE (var)? (WHEN stmt THEN expr)+ (ELSE expr)? END ;
+funcstmt : (path|ID) LB expr (COMMA expr)* RB ;
+select : SELECT fieldlist FROM tablelist (WHERE stmt)? (GROUP BY (path|ID) (COMMA (path|ID))*)? ;
