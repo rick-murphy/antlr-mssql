@@ -140,7 +140,7 @@ public class TestParser extends JFrame {
 		cell.setConnectable(false);
 		for(int i = 0; i < node.getChildCount(); i++){
 			mxCell child = internalDraw(g, cell, (DefaultMutableTreeNode)node.getChildAt(i));
-			mxCell edge = (mxCell)g.insertEdge(cell, null, "", cell, child, "spacing=10");
+			mxCell edge = (mxCell)g.insertEdge(cell, null, "", cell, child, "strokeWidth=3;spacing=10");
 			
 		}
 		return cell;
