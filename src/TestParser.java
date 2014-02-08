@@ -1,37 +1,33 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.antlr.runtime.tree.TreeNodeStream;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.Trees;
 
 import com.mxgraph.layout.mxCompactTreeLayout;
-import com.mxgraph.layout.mxFastOrganicLayout;
-import com.mxgraph.layout.mxOrganicLayout;
-import com.mxgraph.layout.mxParallelEdgeLayout;
-import com.mxgraph.layout.mxPartitionLayout;
 import com.mxgraph.model.mxCell;
-import com.mxgraph.model.mxGeometry;
 import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.util.mxPoint;
-import com.mxgraph.util.mxRectangle;
+import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
 
 
 public class TestParser extends JFrame {
 	
+	private static final long serialVersionUID = -57453049356031356L;
+	
 	class PNodeInfo implements Serializable{
+		private static final long serialVersionUID = -7484223513630476576L;
+		
 		String title;
 		ParseTree node;
 		
@@ -118,50 +114,40 @@ public class TestParser extends JFrame {
 	
 	private void draw(DefaultMutableTreeNode node){
 		mxGraph g = getGraph();
+//		mxStylesheet edgeStyle = new mxStylesheet();
+//	    edgeStyle.setDefaultEdgeStyle(getEdgeStyle());
+		setEdgeStyle(g);
 		
 		g.getModel().beginUpdate();
 		internalDraw(g, null, node);
 		
-		mxCompactTreeLayout layout = new mxCompactTreeLayout(g, false){
-			protected int prefHozEdgeSep = 5;
-			protected int prefVertEdgeOff = 10;
-		};
+		mxCompactTreeLayout layout = new mxCompactTreeLayout(g, false);
 		
         layout.execute(g.getDefaultParent());
         
         g.getModel().endUpdate();
         
 	}
-	final int PORT_DIAMETER = 20;
-
-	final int PORT_RADIUS = PORT_DIAMETER / 2;
+	
+	private void setEdgeStyle(mxGraph g){
+		Map<String, Object> edge = g.getStylesheet().getDefaultEdgeStyle();
+	    edge.put(mxConstants.STYLE_ROUNDED, true);
+	    edge.put(mxConstants.STYLE_ORTHOGONAL, true);
+	    edge.put(mxConstants.STYLE_EDGE, "elbowEdgeStyle");
+	    edge.put(mxConstants.STYLE_ENDARROW, mxConstants.ARROW_OPEN);
+	    edge.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_MIDDLE);
+	    edge.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+	    edge.put(mxConstants.STYLE_FONTCOLOR, "#446299");
+	}
+	
 	private mxCell internalDraw(mxGraph g, mxCell parent, DefaultMutableTreeNode node){
 		mxCell cell = (mxCell)g.insertVertex(g.getDefaultParent(), null, node.getUserObject(), 0, 0, 20, 50, "");
 		cell.setConnectable(false);
 		for(int i = 0; i < node.getChildCount(); i++){
 			mxCell child = internalDraw(g, cell, (DefaultMutableTreeNode)node.getChildAt(i));
-			mxCell edge = (mxCell)g.insertEdge(cell, null, "", cell, child, "strokeWidth=3;spacing=10");
-			
+			g.insertEdge(cell, null, "", cell, child, "");
 		}
+		g.updateCellSize(cell);
 		return cell;
 	}
-	
-	private void id(){
-		mxGraph g = getGraph();
-		Object parent = g.getDefaultParent();
-        g.getModel().beginUpdate();
-        try {
-             Object v1 = g.insertVertex(parent, null, "node1", 100, 100,0,
-                        0);
-             Object v2 = g.insertVertex(parent, null, "node2", 0, 0,
-                        0, 0);
-             Object v3 = g.insertVertex(parent, null, "node3", 0, 0,
-                        0, 30);
-       //     graph.insertEdge(parent, null, "Edge", v1, v2);
-       //     graph.insertEdge(parent, null, "Edge", v2, v3);
-        } finally {
-            g.getModel().endUpdate();
-        }
-	}
-	
 }
